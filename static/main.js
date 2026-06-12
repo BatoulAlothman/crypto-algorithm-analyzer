@@ -1,4 +1,6 @@
+// =====================
 // UI Navigation
+// =====================
 document.querySelectorAll('.nav-links li').forEach(item => {
     item.addEventListener('click', () => {
         document.querySelectorAll('.nav-links li').forEach(nav => nav.classList.remove('active'));
@@ -10,16 +12,26 @@ document.querySelectorAll('.nav-links li').forEach(item => {
     });
 });
 
+// =====================
+// Input Switchers
+// =====================
+
 // Hash/MAC Type Switcher
 document.getElementById('hash-type').addEventListener('change', (e) => {
     const keyGroup = document.getElementById('mac-key-group');
     keyGroup.style.display = (e.target.value === 'mac') ? 'block' : 'none';
 });
 
-// DES Type Switcher
+// DES Type Switcher — Key2 alanını 2-DES ve 3-DES seçildiğinde göster
 document.getElementById('des-type').addEventListener('change', (e) => {
     const key2Group = document.getElementById('des-key2-group');
-    key2Group.style.display = (e.target.value === '3sdes') ? 'block' : 'none';
+    key2Group.style.display = (e.target.value === '2sdes' || e.target.value === '3sdes') ? 'block' : 'none';
+});
+
+// Galois Operation Switcher — Ters Alma seçildiğinde B alanını gizle
+document.getElementById('gf-operation').addEventListener('change', (e) => {
+    const bGroup = document.getElementById('gf-b-group');
+    bGroup.style.display = (e.target.value === 'inverse') ? 'none' : 'block';
 });
 
 // =====================
@@ -145,6 +157,51 @@ function aesPrevStep() {
 }
 
 // =====================
+// Galois Field Operations
+// =====================
+async function runGalois() {
+    const operation = document.getElementById('gf-operation').value;
+    const a = parseInt(document.getElementById('gf-a').value);
+    const b = parseInt(document.getElementById('gf-b').value);
+
+    const outPanel = document.getElementById('galois-output');
+    outPanel.classList.remove('hidden');
+    outPanel.innerHTML = "<p>Hesaplanıyor...</p>";
+
+    try {
+        const response = await fetch('/api/galois', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({operation, a, b})
+        });
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+            outPanel.innerHTML = `<p style="color: #ef4444;">Hata: ${data.error || "İşlem başarısız"}</p>`;
+            return;
+        }
+
+        let html = `<h3>İşlem: ${data.operation}</h3>`;
+        if (data.result !== null) {
+            html += `<h3>Sonuç: <span class="highlight-text">${data.result_hex}</span>  =  ${data.result_poly}</h3><br/>`;
+        }
+        html += `<h4>Adım Adım Çözüm:</h4>`;
+        data.steps.forEach(step => {
+            if (step === '') {
+                html += '<div style="height: 12px;"></div>';
+            } else {
+                html += `<div class="trace-step" style="font-family: monospace; white-space: pre-wrap;">${step}</div>`;
+            }
+        });
+
+        outPanel.innerHTML = html;
+    } catch (e) {
+        console.error("Galois Error", e);
+        outPanel.innerHTML = "<p>Hata oluştu.</p>";
+    }
+}
+
+// =====================
 // DES Execution
 // =====================
 async function runDES() {
@@ -172,13 +229,13 @@ async function runDES() {
 
         let html = `<h3>Şifreli Metin: <span class="highlight-text">${data.ciphertext.join('')}</span></h3><br/>`;
 
-        if (type === '3sdes') {
-            // 3-DES trace has a different structure: array of phases
+        if (type === '3sdes' || type === '2sdes') {
+            // 2-DES ve 3-DES trace: array of phases
             data.trace.forEach((phase, idx) => {
                 html += `<div class="trace-step"><strong>Faz ${idx + 1}: ${phase.phase}</strong><br/>`;
                 html += `Sonuç: <span class="highlight-text">${phase.result.join('')}</span><br/>`;
                 if (phase.details) {
-                    phase.details.forEach((step, sidx) => {
+                    phase.details.forEach((step) => {
                         if (step.bits) {
                             html += `&nbsp;&nbsp;• ${step.step}: ${step.bits.join('')}<br/>`;
                         } else if (step.k1) {

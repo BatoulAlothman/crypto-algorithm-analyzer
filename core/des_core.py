@@ -111,21 +111,46 @@ class SDES:
         
         return plaintext
 
-class TripleSDES:
-    """3-DES prensibini S-DES üzerinden uygular (Encrypt-Decrypt-Encrypt)"""
+class DoubleSDES:
+    """2-DES prensibini S-DES üzerinden uygular (Encrypt-Encrypt).
+    
+    2-DES, iki farklı anahtarla art arda şifreleme yaparak etkin anahtar
+    uzunluğunu artırmayı amaçlar. Ancak Meet-in-the-Middle saldırısına
+    karşı savunmasızdır; bu nedenle pratikte 3-DES tercih edilir.
+    """
     @staticmethod
     def encrypt(plaintext_8bit, key1_10bit, key2_10bit):
         trace = []
         # Adım 1: Key1 ile şifreleme
         c1, t1 = SDES.encrypt(plaintext_8bit, key1_10bit)
-        trace.append({"phase": "Encryption (Key 1)", "details": t1, "result": c1})
+        trace.append({"phase": "1. Şifreleme (Key 1)", "details": t1, "result": c1})
+        
+        # Adım 2: Key2 ile ikinci şifreleme
+        c2, t2 = SDES.encrypt(c1, key2_10bit)
+        trace.append({"phase": "2. Şifreleme (Key 2)", "details": t2, "result": c2})
+        
+        return c2, trace
+
+
+class TripleSDES:
+    """3-DES prensibini S-DES üzerinden uygular (Encrypt-Decrypt-Encrypt).
+    
+    3-DES (EDE yapısı), 2-DES'in Meet-in-the-Middle zafiyetini aşmak için
+    tasarlanmıştır. İki farklı anahtarla E(K1)-D(K2)-E(K1) sırası uygulanır.
+    """
+    @staticmethod
+    def encrypt(plaintext_8bit, key1_10bit, key2_10bit):
+        trace = []
+        # Adım 1: Key1 ile şifreleme
+        c1, t1 = SDES.encrypt(plaintext_8bit, key1_10bit)
+        trace.append({"phase": "1. Şifreleme (Key 1)", "details": t1, "result": c1})
         
         # Adım 2: Key2 ile deşifreleme
         p2 = SDES.decrypt(c1, key2_10bit)
-        trace.append({"phase": "Decryption (Key 2)", "result": p2})
+        trace.append({"phase": "2. Deşifreleme (Key 2)", "result": p2})
         
         # Adım 3: Key1 ile tekrar şifreleme
         c3, t3 = SDES.encrypt(p2, key1_10bit)
-        trace.append({"phase": "Encryption (Key 1)", "details": t3, "result": c3})
+        trace.append({"phase": "3. Şifreleme (Key 1)", "details": t3, "result": c3})
         
         return c3, trace

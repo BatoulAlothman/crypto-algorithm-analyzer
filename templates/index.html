@@ -16,9 +16,10 @@
                 <p>Eğitim Platformu</p>
             </div>
             <ul class="nav-links">
-                <li class="active" data-target="aes-section">AES & Galois</li>
-                <li data-target="des-section">S-DES (Basitleştirilmiş)</li>
-                <li data-target="hash-section">Hash & MAC</li>
+                <li class="active" data-target="aes-section">AES Şifreleme</li>
+                <li data-target="galois-section">Galois Alanları (GF)</li>
+                <li data-target="des-section">DES / 2-DES / 3-DES</li>
+                <li data-target="hash-section">Hash &amp; MAC</li>
                 <li data-target="rbg-section">Rastgele Bit Üretimi</li>
             </ul>
         </nav>
@@ -66,18 +67,49 @@
                 </div>
             </section>
 
+            <!-- Galois Field Section -->
+            <section id="galois-section" class="algo-section">
+                <header class="section-header">
+                    <h1>Galois Alanları &mdash; GF(2<sup>8</sup>)</h1>
+                    <p>AES'in temelini oluşturan sonlu alan aritmetiği: Toplama (XOR), Çarpma ve Ters Alma işlemleri.</p>
+                </header>
+                <div class="glass-panel">
+                    <div class="input-group">
+                        <label>İşlem Seç:</label>
+                        <select id="gf-operation">
+                            <option value="add">Toplama (XOR)</option>
+                            <option value="multiply">Çarpma</option>
+                            <option value="inverse">Ters Alma (a⁻¹)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Eleman A (0–255 arası, örn: 87 = 0x57):</label>
+                        <input type="number" id="gf-a" value="87" min="0" max="255">
+                    </div>
+                    <div class="input-group" id="gf-b-group">
+                        <label>Eleman B (0–255 arası, örn: 131 = 0x83):</label>
+                        <input type="number" id="gf-b" value="131" min="0" max="255">
+                    </div>
+                    <button class="btn-primary" onclick="runGalois()">Hesapla</button>
+                </div>
+                <div id="galois-output" class="output-panel glass-panel hidden">
+                    <!-- Galois Output -->
+                </div>
+            </section>
+
             <!-- DES Section -->
             <section id="des-section" class="algo-section">
                 <header class="section-header">
-                    <h1>Basitleştirilmiş DES & 3-DES</h1>
-                    <p>DES mimarisini anlamak için 8-bitlik eğitimsel şifreleme simülasyonu.</p>
+                    <h1>Basitleştirilmiş DES, 2-DES &amp; 3-DES</h1>
+                    <p>DES mimarisini anlamak için 8-bitlik eğitimsel şifreleme simülasyonu. 2-DES ve 3-DES karşılaştırmalı analiz.</p>
                 </header>
                 <div class="glass-panel">
                     <div class="input-group">
                         <label>Algoritma Seç:</label>
                         <select id="des-type">
                             <option value="sdes">S-DES (Tekli)</option>
-                            <option value="3sdes">Triple S-DES (3-S-DES)</option>
+                            <option value="2sdes">Double S-DES (2-DES) — Encrypt-Encrypt</option>
+                            <option value="3sdes">Triple S-DES (3-DES) — Encrypt-Decrypt-Encrypt</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -89,7 +121,7 @@
                         <input type="text" id="des-key" value="1010101010" maxlength="10">
                     </div>
                     <div class="input-group" id="des-key2-group" style="display: none;">
-                        <label>10-Bit Anahtar 2 (sadece 3-DES için):</label>
+                        <label>10-Bit Anahtar 2 (2-DES ve 3-DES için):</label>
                         <input type="text" id="des-key2" value="0101010101" maxlength="10">
                     </div>
                     <button class="btn-primary" onclick="runDES()">Analiz Et</button>
@@ -102,7 +134,7 @@
             <!-- Hash & MAC Section -->
             <section id="hash-section" class="algo-section">
                 <header class="section-header">
-                    <h1>Hash Fonksiyonları & MAC</h1>
+                    <h1>Hash Fonksiyonları &amp; MAC</h1>
                     <p>SHA-256 ve HMAC çalışma prensipleri.</p>
                 </header>
                 <div class="glass-panel">
