@@ -6,9 +6,10 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'core'))
 
 from aes_core import AESVisualizer
-from des_core import SDES, TripleSDES
+from des_core import SDES, DoubleSDES, TripleSDES
 from hash_mac import HashMACVisualizer
 from rbg_core import RBGVisualizer
+from galois_core import GaloisFieldVisualizer
 
 app = Flask(__name__)
 
@@ -58,12 +59,16 @@ def run_des():
         text_bits = [int(b) for b in raw_text]
         key_bits = [int(b) for b in raw_key]
         
-        if algo_type == '3sdes':
+        if algo_type in ('2sdes', '3sdes'):
             raw_key2 = data.get('key2', '0101010101')
             if not all(c in '01' for c in raw_key2):
-                return jsonify({"error": "3-DES 2. Anahtar sadece 0 ve 1'lerden oluşmalıdır."}), 400
+                return jsonify({"error": "2. Anahtar sadece 0 ve 1'lerden oluşmalıdır."}), 400
             key2_bits = [int(b) for b in raw_key2]
-            ciphertext, trace = TripleSDES.encrypt(text_bits, key_bits, key2_bits)
+            
+            if algo_type == '2sdes':
+                ciphertext, trace = DoubleSDES.encrypt(text_bits, key_bits, key2_bits)
+            else:
+                ciphertext, trace = TripleSDES.encrypt(text_bits, key_bits, key2_bits)
         else:
             ciphertext, trace = SDES.encrypt(text_bits, key_bits)
             
@@ -119,6 +124,33 @@ def run_rbg():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": f"RBG İşlem Hatası: {str(e)}"}), 400
+
+@app.route('/api/galois', methods=['POST'])
+def run_galois():
+    try:
+        data = request.json
+        operation = data.get('operation', 'add')
+        a = int(data.get('a', 0))
+        b = int(data.get('b', 0))
+        
+        # Değer aralığı doğrulaması
+        if not (0 <= a <= 255):
+            return jsonify({"error": "Eleman A, 0-255 aralığında olmalıdır."}), 400
+        if operation != 'inverse' and not (0 <= b <= 255):
+            return jsonify({"error": "Eleman B, 0-255 aralığında olmalıdır."}), 400
+        
+        if operation == 'add':
+            result = GaloisFieldVisualizer.trace_addition(a, b)
+        elif operation == 'multiply':
+            result = GaloisFieldVisualizer.trace_multiplication(a, b)
+        elif operation == 'inverse':
+            result = GaloisFieldVisualizer.trace_inverse(a)
+        else:
+            return jsonify({"error": "Geçersiz işlem türü."}), 400
+            
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": f"Galois İşlem Hatası: {str(e)}"}), 400
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
